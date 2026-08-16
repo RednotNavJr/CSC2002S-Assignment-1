@@ -12,10 +12,10 @@ public class FirelineParallel {
 
     private static final int DEFAULT_MAXIMUM_STEPS = 5_000;
     private static final double DEFAULT_TOLERANCE = 0.05;
-    private static final int SEQUENTIAL_CUTOFF = 10; // set for minimum size to at least by parallelized once
+    private static final int DEFAULT_SEQUENTIAL_CUTOFF = 10; // set for minimum size to at least by parallelized once
 
     public static void main(String[] args) {
-        if (args.length < 5 || args.length > 11 || (args.length > 8 && args.length < 11)) {
+        if (args.length < 5 || args.length > 12 || (args.length > 8 && args.length < 12)) {
             printUsage();
             System.exit(1);
         }
@@ -36,16 +36,20 @@ public class FirelineParallel {
                     ? FireMapParallel.Landscape.fromString(args[7])
                     : FireMapParallel.Landscape.MIXED;
 
+            int sequentialCutoff = args.length >= 9
+                    ? parsePositiveInteger(args[8], "sequential cutoff")
+                    : DEFAULT_SEQUENTIAL_CUTOFF;
+
             Integer ignitionTopRow = null;
             Integer ignitionLeftColumn = null;
             Integer ignitionPatchSize = null;
-            if (args.length == 11) {
+            if (args.length == 12) {
                 ignitionTopRow = parseNonNegativeInteger(
-                        args[8], "ignition top row");
+                        args[9], "ignition top row");
                 ignitionLeftColumn = parseNonNegativeInteger(
-                        args[9], "ignition left column");
+                        args[10], "ignition left column");
                 ignitionPatchSize = parsePositiveInteger(
-                        args[10], "ignition patch size");
+                        args[11], "ignition patch size");
             }
 
             if (outputPrefix.isEmpty()) {
@@ -69,7 +73,7 @@ public class FirelineParallel {
 
                 map.prepareNextState(); // Prepare the next state before starting the parallel computation
 
-                FireTask task = new FireTask(map, mode, SEQUENTIAL_CUTOFF, 1, rows-1, 1, columns-1);
+                FireTask task = new FireTask(map, mode, sequentialCutoff, 1, rows-1, 1, columns-1);
 
                 result = pool.invoke(task); // Use the ForkJoinPool to invoke the task
 
