@@ -26,19 +26,18 @@ public class FirelineParallel {
             long seed = Long.parseLong(args[2]);
             FireMapParallel.Mode mode = FireMapParallel.Mode.fromString(args[3]);
             String outputPrefix = args[4].trim();
-            int maximumSteps = args.length >= 6
-                    ? parsePositiveInteger(args[5], "maximum steps")
-                    : DEFAULT_MAXIMUM_STEPS;
-            double tolerance = args.length >= 7
-                    ? parsePositiveDouble(args[6], "tolerance")
-                    : DEFAULT_TOLERANCE;
-            FireMapParallel.Landscape landscape = args.length >= 8
-                    ? FireMapParallel.Landscape.fromString(args[7])
-                    : FireMapParallel.Landscape.MIXED;
-
-            int sequentialCutoff = args.length >= 9
-                    ? parsePositiveInteger(args[8], "sequential cutoff")
+            int sequentialCutoff = args.length >= 6
+                    ? parsePositiveInteger(args[5], "sequential cutoff")
                     : DEFAULT_SEQUENTIAL_CUTOFF;
+            int maximumSteps = args.length >= 7
+                    ? parsePositiveInteger(args[6], "maximum steps")
+                    : DEFAULT_MAXIMUM_STEPS;
+            double tolerance = args.length >= 8
+                    ? parsePositiveDouble(args[7], "tolerance")
+                    : DEFAULT_TOLERANCE;
+            FireMapParallel.Landscape landscape = args.length >= 9
+                    ? FireMapParallel.Landscape.fromString(args[8])
+                    : FireMapParallel.Landscape.MIXED;
 
             Integer ignitionTopRow = null;
             Integer ignitionLeftColumn = null;
