@@ -1,3 +1,5 @@
+import java.util.concurrent.ForkJoinPool;
+
 /**
  * @author Joshua van Tonder (VTNJOS003)
  */
@@ -10,6 +12,7 @@ public class FirelineParallel {
 
     private static final int DEFAULT_MAXIMUM_STEPS = 5_000;
     private static final double DEFAULT_TOLERANCE = 0.05;
+    private static final int SEQUENTIAL_CUTOFF = 10; // set for minimum size to at least by parallelized once
 
     public static void main(String[] args) {
         if (args.length < 5 || args.length > 11 || (args.length > 8 && args.length < 11)) {
@@ -21,7 +24,7 @@ public class FirelineParallel {
             int rows = parsePositiveInteger(args[0], "rows");
             int columns = parsePositiveInteger(args[1], "columns");
             long seed = Long.parseLong(args[2]);
-            FireMap.Mode mode = FireMap.Mode.fromString(args[3]);
+            FireMapParallel.Mode mode = FireMapParallel.Mode.fromString(args[3]);
             String outputPrefix = args[4].trim();
             int maximumSteps = args.length >= 6
                     ? parsePositiveInteger(args[5], "maximum steps")
@@ -29,9 +32,9 @@ public class FirelineParallel {
             double tolerance = args.length >= 7
                     ? parsePositiveDouble(args[6], "tolerance")
                     : DEFAULT_TOLERANCE;
-            FireMap.Landscape landscape = args.length >= 8
-                    ? FireMap.Landscape.fromString(args[7])
-                    : FireMap.Landscape.MIXED;
+            FireMapParallel.Landscape landscape = args.length >= 8
+                    ? FireMapParallel.Landscape.fromString(args[7])
+                    : FireMapParallel.Landscape.MIXED;
 
             Integer ignitionTopRow = null;
             Integer ignitionLeftColumn = null;
@@ -50,22 +53,32 @@ public class FirelineParallel {
                         "The output prefix may not be empty.");
             }
 
-            FireMap map = new FireMap(
+            FireMapParallel map = new FireMapParallel(
                     rows, columns, seed, mode, landscape,
                     ignitionTopRow, ignitionLeftColumn, ignitionPatchSize);
 
             long startTime = System.nanoTime();
-            FireMap.StepResult result = null;
+            FireMapParallel.StepResult result = null;
             int stepsCompleted = 0;
             boolean converged = false;
 
-            // implememtn fork join pool to get final result and update the entire buffered grid
+            // Create a ForkJoinPool to manage parallel tasks
+            ForkJoinPool pool = new ForkJoinPool(8); 
 
             while (stepsCompleted < maximumSteps) {
-                result = map.step(mode);
+
+                map.prepareNextState(); // Prepare the next state before starting the parallel computation
+
+                FireTask task = new FireTask(map, mode, SEQUENTIAL_CUTOFF, 1, rows-1, 1, columns-1);
+
+                result = pool.invoke(task); // Use the ForkJoinPool to invoke the task
+
+                map.completeStep();
+    
                 stepsCompleted++;
 
-                if (mode == FireMap.Mode.WILDFIRE) {
+                // Check for Convergence
+                if (mode == FireMapParallel.Mode.WILDFIRE) {
                     converged = result.getBurningCells() == 0
                             && result.getMaximumTemperatureChange() < tolerance;
                 } else {
@@ -75,6 +88,7 @@ public class FirelineParallel {
                 if (converged) {
                     break;
                 }
+
             }
 
             long endTime = System.nanoTime();
@@ -82,7 +96,7 @@ public class FirelineParallel {
 
             map.writeImages(outputPrefix);
 
-            System.out.println("Fireline serial simulation");
+            System.out.println("Fireline parallel simulation");
             System.out.printf("Mode: %s%n", mode.name().toLowerCase());
             System.out.printf("Rows: %d, Columns: %d%n", rows, columns);
             System.out.printf("Random seed: %d%n", seed);
