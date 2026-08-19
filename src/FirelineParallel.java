@@ -15,7 +15,7 @@ public class FirelineParallel {
     private static final int DEFAULT_SEQUENTIAL_CUTOFF = 10; // set for minimum size to at least by parallelized once
 
     public static void main(String[] args) {
-        if (args.length < 5 || args.length > 12 || (args.length > 8 && args.length < 12)) {
+        if (args.length < 5 || args.length > 12 || (args.length > 9 && args.length < 12)) {
             printUsage();
             System.exit(1);
         }
@@ -26,6 +26,7 @@ public class FirelineParallel {
             long seed = Long.parseLong(args[2]);
             FireMapParallel.Mode mode = FireMapParallel.Mode.fromString(args[3]);
             String outputPrefix = args[4].trim();
+            // remove after testing is finished
             int sequentialCutoff = args.length >= 6
                     ? parsePositiveInteger(args[5], "sequential cutoff")
                     : DEFAULT_SEQUENTIAL_CUTOFF;
