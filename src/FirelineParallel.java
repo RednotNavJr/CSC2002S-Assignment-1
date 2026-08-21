@@ -75,7 +75,9 @@ public class FirelineParallel {
 
                 FireTask task = new FireTask(map, mode, sequentialCutoff, 1, rows-1, 1, columns-1);
 
-                result = pool.invoke(task); // Use the ForkJoinPool to invoke the task
+                pool.execute(task); // Execute the task
+
+                result = task.join();
 
                 map.completeStep();
     
@@ -94,6 +96,8 @@ public class FirelineParallel {
                 }
 
             }
+
+            pool.close();
 
             long endTime = System.nanoTime();
             double elapsedMilliseconds = (endTime - startTime) / 1_000_000.0;
