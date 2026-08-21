@@ -4,18 +4,16 @@ import java.util.concurrent.ForkJoinPool;
  * @author Joshua van Tonder (VTNJOS003)
  */
 
-// Copy the FirelineSerial.java and modify it to use different sequential cutoffs and different grid sizes, saving all runs data into a .txt file
-
-// use square grid sizes for comparison starting at the minimum (20x20) and increasing by 20 up to 1000x1000. have sequential cutoff test at 1/20th, 1/10th, 1/5th, 1/4th and 1/2.
+// use square grid sizes for comparison starting at 40x40 and increasing by 40 up to 600x600.
 
 public class FirelineParallel {
 
     private static final int DEFAULT_MAXIMUM_STEPS = 5_000;
     private static final double DEFAULT_TOLERANCE = 0.05;
-    private static final int DEFAULT_SEQUENTIAL_CUTOFF = 10; // set for minimum size to at least by parallelized once
+    private static final int SEQUENTIAL_CUTOFF = 10; // calculated value from data
 
     public static void main(String[] args) {
-        if (args.length < 5 || args.length > 12 || (args.length > 9 && args.length < 12)) {
+        if (args.length < 5 || args.length > 11 || (args.length > 8 && args.length < 11)) {
             printUsage();
             System.exit(1);
         }
@@ -26,30 +24,26 @@ public class FirelineParallel {
             long seed = Long.parseLong(args[2]);
             FireMapParallel.Mode mode = FireMapParallel.Mode.fromString(args[3]);
             String outputPrefix = args[4].trim();
-            // remove after testing is finished
-            int sequentialCutoff = args.length >= 6
-                    ? parsePositiveInteger(args[5], "sequential cutoff")
-                    : DEFAULT_SEQUENTIAL_CUTOFF;
-            int maximumSteps = args.length >= 7
-                    ? parsePositiveInteger(args[6], "maximum steps")
+            int maximumSteps = args.length >= 6
+                    ? parsePositiveInteger(args[5], "maximum steps")
                     : DEFAULT_MAXIMUM_STEPS;
-            double tolerance = args.length >= 8
-                    ? parsePositiveDouble(args[7], "tolerance")
+            double tolerance = args.length >= 7
+                    ? parsePositiveDouble(args[6], "tolerance")
                     : DEFAULT_TOLERANCE;
-            FireMapParallel.Landscape landscape = args.length >= 9
-                    ? FireMapParallel.Landscape.fromString(args[8])
+            FireMapParallel.Landscape landscape = args.length >= 8
+                    ? FireMapParallel.Landscape.fromString(args[7])
                     : FireMapParallel.Landscape.MIXED;
 
             Integer ignitionTopRow = null;
             Integer ignitionLeftColumn = null;
             Integer ignitionPatchSize = null;
-            if (args.length == 12) {
+            if (args.length == 11) {
                 ignitionTopRow = parseNonNegativeInteger(
-                        args[9], "ignition top row");
+                        args[8], "ignition top row");
                 ignitionLeftColumn = parseNonNegativeInteger(
-                        args[10], "ignition left column");
+                        args[9], "ignition left column");
                 ignitionPatchSize = parsePositiveInteger(
-                        args[11], "ignition patch size");
+                        args[10], "ignition patch size");
             }
 
             if (outputPrefix.isEmpty()) {
@@ -73,7 +67,7 @@ public class FirelineParallel {
 
                 map.prepareNextState(); // Prepare the next state before starting the parallel computation
 
-                FireTask task = new FireTask(map, mode, sequentialCutoff, 1, rows-1, 1, columns-1);
+                FireTask task = new FireTask(map, mode, SEQUENTIAL_CUTOFF, 1, rows-1, 1, columns-1);
 
                 pool.execute(task); // Execute the task
 
@@ -96,8 +90,6 @@ public class FirelineParallel {
                 }
 
             }
-
-            pool.close();
 
             long endTime = System.nanoTime();
             double elapsedMilliseconds = (endTime - startTime) / 1_000_000.0;
